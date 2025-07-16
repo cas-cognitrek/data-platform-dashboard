@@ -1,13 +1,13 @@
 
 import streamlit as st
 import pandas as pd
+import altair as alt
 
 st.set_page_config(page_title="Data Platform Evaluation Dashboard", layout="wide")
 
 st.title("📊 Data Platform Evaluation Calculator")
 st.markdown("Upload a CSV file with weight assignments to evaluate platform options. Total weights must sum to 100%.")
 
-# Upload weight CSV
 uploaded_file = st.file_uploader("Upload Weight Template CSV", type=["csv"])
 
 if uploaded_file:
@@ -15,13 +15,13 @@ if uploaded_file:
     if "Criteria" not in weights_df.columns or "Weight (%)" not in weights_df.columns:
         st.error("CSV must contain 'Criteria' and 'Weight (%)' columns.")
     else:
-        if weights_df["Weight (%)"].sum() != 100:
-            st.error("Total weight must equal 100% (currently %d%%)" % weights_df["Weight (%)"].sum())
+        total_weight = weights_df["Weight (%)"].sum()
+        if total_weight != 100:
+            st.error("Total weight must equal 100% (currently {:.1f}%)".format(total_weight))
         else:
             criteria = list(weights_df["Criteria"])
             weights = weights_df.set_index("Criteria")["Weight (%)"].div(100)
 
-            # Define option scores
             options = {
                 "AWS Native + Custom": [6, 4, 5, 3, 7, 4, 6, 10, 6, 9],
                 "AWS + Atlan": [7, 9, 8, 9, 8, 9, 8, 7, 7, 6],
@@ -36,7 +36,30 @@ if uploaded_file:
             weighted = df_scores.mul(weights, axis=0)
             weighted.loc["Total Score"] = weighted.sum()
 
+            st.subheader("Weighted Scores Table")
             st.dataframe(weighted.style.format("{:.2f}"))
-            st.bar_chart(weighted.T["Total Score"].dropna())
+
+            # Total Score comparison sorted
+            total_scores = weighted.T["Total Score"].dropna().sort_values(ascending=False)
+            st.subheader("Total Score Comparison (Sorted)")
+            st.dataframe(total_scores.to_frame().style.format("{:.2f}"))
+
+            # Horizontal bar chart for full label display
+            chart_data = total_scores.reset_index()
+            chart_data.columns = ["Option", "Total Score"]
+            bar_chart = alt.Chart(chart_data).mark_bar().encode(
+                y=alt.Y("Option", sort="-x", axis=alt.Axis(labelFontSize=12, labelFontWeight="bold")),
+                x=alt.X("Total Score", scale=alt.Scale(domain=[0, 10]), axis=alt.Axis(labelFontSize=12, labelFontWeight="bold")),
+                tooltip=["Option", "Total Score"]
+            ).properties(
+                title=alt.TitleParams(
+                    text="Total Score Comparison (Horizontal)",
+                    fontSize=18,
+                    fontWeight="bold",
+                    anchor='start'
+                )
+            )
+
+            st.altair_chart(bar_chart, use_container_width=True)
 else:
     st.info("Please upload your weight template CSV to begin.")
