@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: data-platform-dashboard
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run data_platform_dashboard_app.py --server.port $PORT --server.enableCORS false
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10
