@@ -39,19 +39,24 @@ if uploaded_file:
             st.subheader("Weighted Scores Table")
             st.dataframe(weighted.style.format("{:.2f}"))
 
-            # Total Score comparison sorted
             total_scores = weighted.T["Total Score"].dropna().sort_values(ascending=False)
             st.subheader("Total Score Comparison (Sorted)")
             st.dataframe(total_scores.to_frame().style.format("{:.2f}"))
 
-            # Horizontal bar chart for full label display
             chart_data = total_scores.reset_index()
             chart_data.columns = ["Option", "Total Score"]
-            bar_chart = alt.Chart(chart_data).mark_bar().encode(
-                y=alt.Y("Option", sort="-x", axis=alt.Axis(labelFontSize=12, labelFontWeight="bold")),
+            bar_chart = alt.Chart(chart_data).mark_bar(size=20).encode(
+                y=alt.Y("Option", sort="-x", axis=alt.Axis(
+                    labelFontSize=12,
+                    labelFontWeight="bold",
+                    labelLimit=1000,
+                    labelExpr="datum.value"
+                )),
                 x=alt.X("Total Score", scale=alt.Scale(domain=[0, 10]), axis=alt.Axis(labelFontSize=12, labelFontWeight="bold")),
                 tooltip=["Option", "Total Score"]
             ).properties(
+                height=280,
+                width=850,
                 title=alt.TitleParams(
                     text="Total Score Comparison (Horizontal)",
                     fontSize=18,
@@ -60,6 +65,6 @@ if uploaded_file:
                 )
             )
 
-            st.altair_chart(bar_chart, use_container_width=True)
+            st.altair_chart(bar_chart, use_container_width=False)
 else:
     st.info("Please upload your weight template CSV to begin.")
