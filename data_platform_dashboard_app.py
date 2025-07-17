@@ -1,70 +1,35 @@
 
 import streamlit as st
 import pandas as pd
-import altair as alt
+import os
 
-st.set_page_config(page_title="Data Platform Evaluation Dashboard", layout="wide")
+# Load base evaluation scores
+df = pd.read_csv("Data_Platform_Evaluation_Raw.csv")
 
-st.title("📊 Data Platform Evaluation Calculator")
-st.markdown("Upload a CSV file with weight assignments to evaluate platform options. Total weights must sum to 100%.")
+st.title("Data Governance Architecture Evaluation")
 
-uploaded_file = st.file_uploader("Upload Weight Template CSV", type=["csv"])
+st.write("### Evaluation Matrix (Raw Scores)")
+st.dataframe(df.set_index("Criteria"))
 
-if uploaded_file:
-    weights_df = pd.read_csv(uploaded_file)
-    if "Criteria" not in weights_df.columns or "Weight (%)" not in weights_df.columns:
-        st.error("CSV must contain 'Criteria' and 'Weight (%)' columns.")
+st.write("### Criteria Justifications")
+
+criteria_files = {
+    "Total Cost of Ownership (TCO)": "TCO_Justification.md",
+    "Time to Deploy": "Time_to_Deploy_Justification.md",
+    "Feature Completeness": "Feature_Completeness_Justification.md",
+    "Customization Required": "Customization_Required_Justification.md",
+    "Scalability & Extensibility": "Scalability_&_Extensibility_Justification.md",
+    "Business User Experience": "Business_User_Experience_Justification.md",
+    "Governance & Compliance": "Governance_&_Compliance_Justification.md",
+    "Integration with AWS Ecosystem": "Integration_with_AWS_Ecosystem_Justification.md",
+    "Support for Data Mesh & Products": "Support_for_Data_Mesh_&_Products_Justification.md",
+    "Vendor Lock-in Risk": "Vendor_Lock-in_Risk_Justification.md",
+}
+
+for criterion, file in criteria_files.items():
+    if os.path.exists(file):
+        with st.expander(criterion):
+            with open(file, "r") as f:
+                st.markdown(f.read(), unsafe_allow_html=True)
     else:
-        total_weight = weights_df["Weight (%)"].sum()
-        if total_weight != 100:
-            st.error("Total weight must equal 100% (currently {:.1f}%)".format(total_weight))
-        else:
-            criteria = list(weights_df["Criteria"])
-            weights = weights_df.set_index("Criteria")["Weight (%)"].div(100)
-
-            options = {
-                "AWS Native + Custom": [6, 4, 5, 3, 7, 4, 6, 10, 6, 9],
-                "AWS + Atlan": [7, 9, 8, 9, 8, 9, 8, 7, 7, 6],
-                "AWS + Collibra": [5, 6, 9, 6, 9, 7, 9, 6, 8, 5],
-                "AWS + Informatica": [4, 5, 9, 5, 9, 6, 9, 5, 7, 4],
-                "AWS + OpenMetadata": [8, 6, 7, 6, 8, 6, 7, 8, 6, 8],
-                "AWS + DataHub": [8, 6, 6, 6, 8, 6, 6, 7, 6, 8],
-                "AWS + Amundsen": [9, 5, 5, 5, 7, 6, 5, 6, 5, 9],
-            }
-
-            df_scores = pd.DataFrame(options, index=criteria)
-            weighted = df_scores.mul(weights, axis=0)
-            weighted.loc["Total Score"] = weighted.sum()
-
-            st.subheader("Weighted Scores Table")
-            st.dataframe(weighted.style.format("{:.2f}"))
-
-            total_scores = weighted.T["Total Score"].dropna().sort_values(ascending=False)
-            st.subheader("Total Score Comparison (Sorted)")
-            st.dataframe(total_scores.to_frame().style.format("{:.2f}"))
-
-            chart_data = total_scores.reset_index()
-            chart_data.columns = ["Option", "Total Score"]
-            bar_chart = alt.Chart(chart_data).mark_bar(size=20).encode(
-                y=alt.Y("Option", sort="-x", axis=alt.Axis(
-                    labelFontSize=12,
-                    labelFontWeight="bold",
-                    labelLimit=1000,
-                    labelExpr="datum.value"
-                )),
-                x=alt.X("Total Score", scale=alt.Scale(domain=[0, 10]), axis=alt.Axis(labelFontSize=12, labelFontWeight="bold")),
-                tooltip=["Option", "Total Score"]
-            ).properties(
-                height=280,
-                width=850,
-                title=alt.TitleParams(
-                    text="Total Score Comparison (Horizontal)",
-                    fontSize=18,
-                    fontWeight="bold",
-                    anchor='start'
-                )
-            )
-
-            st.altair_chart(bar_chart, use_container_width=False)
-else:
-    st.info("Please upload your weight template CSV to begin.")
+        st.warning(f"Justification file for '{criterion}' not found.")
