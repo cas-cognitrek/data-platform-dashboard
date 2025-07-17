@@ -1,0 +1,10 @@
+Criteria,Weight
+Total Cost of Ownership (TCO),0.15
+Time to Deploy,0.1
+Feature Completeness,0.15
+Customization Required,0.1
+Scalability & Extensibility,0.1
+Business User Experience,0.1
+Governance & Compliance,0.1
+Integration with AWS Ecosystem,0.1
+Vendor Lock-in Risk,0.1
