@@ -1,43 +1,61 @@
 
 import streamlit as st
 import pandas as pd
-import os
-from io import StringIO
+import altair as alt
+import numpy as np
 
-st.title("Data Governance Architecture Evaluation")
+st.set_page_config(page_title="Data Governance Scorecard", layout="wide")
+st.title("🏗️ Data Governance Architecture Evaluation")
 
-# Upload CSV first
-st.sidebar.header("Step 1: Upload Evaluation CSV")
-uploaded_file = st.sidebar.file_uploader("Upload 'Data_Platform_Evaluation_Raw.csv'", type=["csv"])
+# Load internal raw scores
+raw_scores = pd.read_csv("Data_Platform_Evaluation_Raw.csv")
+criteria = raw_scores["Criteria"]
+platforms = raw_scores.columns[1:]
 
-if uploaded_file is not None:
-    # Read uploaded CSV into DataFrame
-    stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
-    df = pd.read_csv(stringio)
+# Sidebar: scoring mode and weights upload
+st.sidebar.header("Configure Evaluation")
+scoring_method = st.sidebar.radio("Scoring Mode", ["Linear", "Squared", "Exponential"])
+uploaded_weights = st.sidebar.file_uploader("Upload weights.csv", type=["csv"])
 
-    st.write("### Evaluation Matrix (Raw Scores)")
-    st.dataframe(df.set_index("Criteria"))
+if uploaded_weights:
+    try:
+        weights_df = pd.read_csv(uploaded_weights)
+        weights_df = weights_df.set_index("Criteria").reindex(criteria)
 
-    st.write("### Criteria Justifications")
-
-    criteria_files = {
-        "Total Cost of Ownership (TCO)": "TCO_Justification.md",
-        "Time to Deploy": "Time_to_Deploy_Justification.md",
-        "Feature Completeness": "Feature_Completeness_Justification.md",
-        "Customization Required": "Customization_Required_Justification.md",
-        "Scalability & Extensibility": "Scalability_&_Extensibility_Justification.md",
-        "Business User Experience": "Business_User_Experience_Justification.md",
-        "Governance & Compliance": "Governance_&_Compliance_Justification.md",
-        "Integration with AWS Ecosystem": "Integration_with_AWS_Ecosystem_Justification.md",
-        "Vendor Lock-in Risk": "Vendor_Lock-in_Risk_Justification.md"
-    }
-
-    for criterion, file in criteria_files.items():
-        if os.path.exists(file):
-            with st.expander(criterion):
-                with open(file, "r") as f:
-                    st.markdown(f.read(), unsafe_allow_html=True)
+        if weights_df.isnull().values.any():
+            st.error("Weight file is missing some criteria. Please check the file.")
         else:
-            st.warning(f"Justification file for '{criterion}' not found.")
+            st.success("Weights uploaded successfully.")
+
+            # Apply scoring based on method
+            scores_df = raw_scores.copy()
+            if scoring_method == "Linear":
+                for platform in platforms:
+                    scores_df[platform] = scores_df[platform] * weights_df["Weight"].values
+            elif scoring_method == "Squared":
+                for platform in platforms:
+                    scores_df[platform] = (scores_df[platform] ** 2) * weights_df["Weight"].values
+            elif scoring_method == "Exponential":
+                for platform in platforms:
+                    scores_df[platform] = (scores_df[platform] ** 2.5) * weights_df["Weight"].values
+
+            totals = scores_df[platforms].sum().sort_values(ascending=False)
+            total_df = totals.reset_index()
+            total_df.columns = ["Platform", "Final Score"]
+
+            st.subheader(f"{scoring_method} Weighted Scores")
+            st.dataframe(scores_df.set_index("Criteria"))
+
+            st.subheader("📊 Final Scores by Platform")
+            st.dataframe(total_df)
+
+            chart = alt.Chart(total_df).mark_bar().encode(
+                x=alt.X("Final Score:Q", title="Weighted Score"),
+                y=alt.Y("Platform:N", sort='-x'),
+                tooltip=["Platform", "Final Score"]
+            ).properties(height=400)
+            st.altair_chart(chart, use_container_width=True)
+    except Exception as e:
+        st.error(f"Failed to load or process CSV: {e}")
 else:
-    st.info("Please upload the evaluation CSV to begin.")
+    st.info("Please upload a weights CSV to begin.")
