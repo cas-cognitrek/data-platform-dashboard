@@ -34,19 +34,26 @@ scoring_method = st.sidebar.radio("Scoring Mode", ["Linear", "Squared", "Exponen
 tco_weights_map = {"low": 0.20, "medium": 0.25, "high": 0.30, "very high": 0.40}
 custom_weights_map = {"low": 0.10, "medium": 0.15, "high": 0.20, "very high": 0.30}
 
-# Extract rows for TCO and Customization
-tco_row = raw_scores[raw_scores["Criteria"] == "Total Cost of Ownership (TCO)"].iloc[0, 1:]
-custom_row = raw_scores[raw_scores["Criteria"] == "Customization Required"].iloc[0, 1:]
+# Fixed TCO and Customization level mapping (manually defined)
+tco_buckets = {
+    "AWS Native + Custom": "very high",
+    "AWS + Amundsen": "high",
+    "AWS + OpenMetadata": "high",
+    "AWS + DataHub": "medium",
+    "AWS + Atlan": "medium",
+    "AWS + Collibra": "low",
+    "AWS + Informatica": "low"
+}
 
-# Assign levels via ranking
-def classify_buckets(series, levels):
-    ranked = series.rank(ascending=False, method="min")
-    return pd.cut(ranked, bins=len(levels), labels=levels).to_dict()
-
-tco_levels = ["very high", "high", "medium", "low"]
-custom_levels = ["very high", "high", "medium", "low"]
-tco_buckets = classify_buckets(tco_row, tco_levels)
-custom_buckets = classify_buckets(custom_row, custom_levels)
+custom_buckets = {
+    "AWS Native + Custom": "very high",
+    "AWS + Amundsen": "medium",
+    "AWS + OpenMetadata": "high",
+    "AWS + DataHub": "high",
+    "AWS + Atlan": "medium",
+    "AWS + Collibra": "low",
+    "AWS + Informatica": "medium"
+}
 
 # Convert to dict for lookup
 baseline_static_weights = dict(zip(static_weights["Criteria"], static_weights["Weight"]))
