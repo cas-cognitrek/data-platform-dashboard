@@ -7,18 +7,7 @@ import numpy as np
 st.set_page_config(page_title="Data Governance Scorecard", layout="wide")
 st.title("🏗️ Data Governance Architecture Evaluation")
 
-
-# File upload section
-st.sidebar.header("Upload Client Weights")
-weights_file = st.sidebar.file_uploader("Upload weights CSV", type=["csv"])
-if weights_file:
-    static_weights = pd.read_csv(weights_file)
-else:
-    st.warning("Please upload a weights CSV to begin.")
-    st.stop()
-
-# Load internal raw scores
-
+# Load internal files
 raw_scores = pd.read_csv("Data_Platform_Evaluation_Raw.csv")
 static_weights = pd.read_csv("weights_static_rescaled.csv")
 
@@ -48,10 +37,13 @@ custom_levels = ["very high", "high", "medium", "low"]
 tco_buckets = classify_buckets(tco_row, tco_levels)
 custom_buckets = classify_buckets(custom_row, custom_levels)
 
-# Ensure weights are numeric
-static_weights["Weight"] = static_weights["Weight"].astype(float)
 
-# Convert to dictionary
+# Convert weight column to float safely
+static_weights["Weight"] = pd.to_numeric(static_weights["Weight"], errors="coerce")
+static_weights = static_weights.dropna(subset=["Weight"])
+
+# Build baseline weight dict from file
+
 baseline_static_weights = dict(zip(static_weights["Criteria"], static_weights["Weight"]))
 
 # Calculate per-option scores
