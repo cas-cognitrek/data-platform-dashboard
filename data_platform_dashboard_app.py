@@ -7,7 +7,17 @@ import numpy as np
 st.set_page_config(page_title="Data Governance Scorecard", layout="wide")
 st.title("🏗️ Data Governance Architecture Evaluation")
 
-# Load internal files
+
+# File upload section
+st.sidebar.header("Upload Client Weights")
+weights_file = st.sidebar.file_uploader("Upload weights CSV", type=["csv"])
+if weights_file:
+    static_weights = pd.read_csv(weights_file)
+else:
+    static_weights = pd.read_csv("weights_static_rescaled.csv")
+
+# Load internal raw scores
+
 raw_scores = pd.read_csv("Data_Platform_Evaluation_Raw.csv")
 static_weights = pd.read_csv("weights_static_rescaled.csv")
 

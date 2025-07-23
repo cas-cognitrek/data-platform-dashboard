@@ -2,7 +2,7 @@ Criteria,Weight,,,,,,,
 Total Cost of Ownership (TCO),low,0.2,medium,0.25,high,0.3,very high,0.4
 Time to Deploy,0.1,,,,,,,
 Feature Completeness,0.15,,,,,,,
-Customization Required,< 160,0.1,161–480,0.15,481–1000,0.2,> 1000,0.3
+Customization Required,< 160,0.1,161â€“480,0.15,481â€“1000,0.2,> 1000,0.3
 Scalability & Extensibility,0.1,,,,,,,
 Business User Experience,0.1,,,,,,,
 Governance & Compliance,0.1,,,,,,,
