@@ -48,7 +48,10 @@ custom_levels = ["very high", "high", "medium", "low"]
 tco_buckets = classify_buckets(tco_row, tco_levels)
 custom_buckets = classify_buckets(custom_row, custom_levels)
 
-# Build baseline weight dict from file
+# Ensure weights are numeric
+static_weights["Weight"] = static_weights["Weight"].astype(float)
+
+# Convert to dictionary
 baseline_static_weights = dict(zip(static_weights["Criteria"], static_weights["Weight"]))
 
 # Calculate per-option scores
