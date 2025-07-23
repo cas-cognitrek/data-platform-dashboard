@@ -14,7 +14,8 @@ weights_file = st.sidebar.file_uploader("Upload weights CSV", type=["csv"])
 if weights_file:
     static_weights = pd.read_csv(weights_file)
 else:
-    static_weights = pd.read_csv("weights_static_rescaled.csv")
+    st.warning("Please upload a weights CSV to begin.")
+    st.stop()
 
 # Load internal raw scores
 
